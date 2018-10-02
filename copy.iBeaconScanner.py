@@ -9,7 +9,6 @@ from bluepy.btle import DefaultDelegate
 import datetime
 import grequests
 import json
-import copy
 
 
 ID = 1
@@ -18,7 +17,6 @@ URL = "https://ibeacon-tracker.herokuapp.com/anchor_tag_detections"
 HEADERS = {"Accept":"application/json","Content-Type":"application/json"}
 FILTER = ["5c:f8:21", "f3:4f:c8"]
 devices = []
-devicesBefore = []
 
 
 def rssiInMeter(rssi):
@@ -59,28 +57,6 @@ while True:
     scanner = btle.Scanner().withDelegate(ScanDelegate())
     advertidedDevices = scanner.scan(SECONDS)
     print("Done! Found devices: %d" % len(advertidedDevices))
-
-    devicesBefore = copy.deepcopy(devices)
-    
-    for deviceBefore in devicesBefore:
-        deviceIsGone = True
-        
-        for device in devices:
-            if devices["address"] == deviceBefore["address"]:
-                deviceIsGone = False
-                del device["is_in_range"]
-                
-                if deviceBefore["distance"] == device["distance"]:
-                    del device["distance"]
-                    del device["date_time"]
-                break
-        
-        if deviceIsGone:
-            goneDevice = {"anchors_id": ID,
-                          "address": deviceBefore["address"],
-                          "is_in_range": False}
-            
-            devices.append(goneDevicedevice)
 
     json = {"anchor_tag_detection": devices}
 
