@@ -9,7 +9,6 @@ from bluepy.btle import DefaultDelegate
 import datetime
 import grequests
 import json
-import copy
 
 
 ID = 1
@@ -18,7 +17,6 @@ URL = "https://ibeacon-tracker.herokuapp.com/anchor_tag_detections"
 HEADERS = {"Accept":"application/json","Content-Type":"application/json"}
 FILTER = ["5c:f8:21", "f3:4f:c8"]
 devices = []
-devicesBefore = []
 
 
 def rssiInMeter(rssi):
@@ -35,7 +33,7 @@ class ScanDelegate(DefaultDelegate):
         # Found a device!
         if isNewDev:
             print("Device: %s\tRSSI: %d dB" % (dev.addr, dev.rssi))
-
+            
             for filter in FILTER:
                 if dev.addr[0:8] == filter:
                     # Seems like this device might be in our interest
@@ -45,7 +43,8 @@ class ScanDelegate(DefaultDelegate):
                     device = {"anchors_id": ID,
                               "address": address,
                               "distance": rssiInMeter(dev.rssi),
-                              "date_time": str(datetime.datetime.now())}
+                              "date_time": str(datetime.datetime.now()),
+                              "is_in_range": True}
 
                     devices.append(device)
 
@@ -59,34 +58,9 @@ while True:
     advertidedDevices = scanner.scan(SECONDS)
     print("Done! Found devices: %d" % len(advertidedDevices))
 
-    # print("\ndev now: %s\n\ndev bef: %s\n" % (devices, devicesBefore))
-
-    # Let's delete what has already been sent before to increase performance during data transfer
-    devicesCopy = copy.deepcopy(devices)
-
-    for deviceBefore in devicesBefore:
-        deviceIsGone = True
-
-        for device in devices:
-            if device["address"] == deviceBefore["address"]:
-                deviceIsGone = False
-
-                if "distance" in deviceBefore:
-                    if deviceBefore["distance"] == device["distance"]:
-                        del device["distance"]
-                        del device["date_time"]
-                break
-
-        if deviceIsGone:
-            goneDevice = {"anchors_id": ID,
-                          "address": deviceBefore["address"],
-                          "is_in_range": False}
-
-            devices.append(goneDevice)
-    # Now 'devices' contains only what needs to be updated
     json = {"anchor_tag_detection": devices}
+
     print("Matching devices: %d\n\nJSON: %s\n" % (len(devices), json))
-    devicesBefore = copy.deepcopy(devicesCopy)
 
     print("Preparing HTTP request...")
     request = [grequests.post(URL, json=json, headers=HEADERS)]
@@ -94,4 +68,3 @@ while True:
 
     devices = []
     print("Done!\n")
-

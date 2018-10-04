@@ -76,22 +76,21 @@ while True:
                         del device["distance"]
                         del device["date_time"]
                 break
-
-        if deviceIsGone:
+                if deviceIsGone:
             goneDevice = {"anchors_id": ID,
                           "address": deviceBefore["address"],
                           "is_in_range": False}
-
+            
             devices.append(goneDevice)
     # Now 'devices' contains only what needs to be updated
     json = {"anchor_tag_detection": devices}
     print("Matching devices: %d\n\nJSON: %s\n" % (len(devices), json))
     devicesBefore = copy.deepcopy(devicesCopy)
-
+    
     print("Preparing HTTP request...")
     request = [grequests.post(URL, json=json, headers=HEADERS)]
     grequests.map(request, exception_handler=exception_handler, gtimeout=5)
-
+    
     devices = []
     print("Done!\n")
-
+    
